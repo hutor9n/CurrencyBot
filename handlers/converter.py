@@ -1,40 +1,11 @@
 from telebot import types
 from telebot.types import Message, CallbackQuery
 from core.config import bot
-from core.translations import get_ru_name
 import logging
 from services.fiat_api import convert_currency, get_sorted_currencies
+from core.keyboards import get_currency_select_keyboard
 
 MENU_BUTTONS = ['💱 Курс гривны', '🔄 Конвертер', '📋 Список валют']
-ITEMS_PER_PAGE = 10
-
-def get_convert_keyboard(prefix: str, page: int, total_pages: int, items: list, make_callback_data):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    start_idx = (page - 1) * ITEMS_PER_PAGE
-    end_idx = start_idx + ITEMS_PER_PAGE
-    page_items = items[start_idx:end_idx]
-    
-    for code, original_name in page_items:
-        ru_name = get_ru_name(code, original_name)
-        markup.add(types.InlineKeyboardButton(f"{code} — {ru_name}", callback_data=make_callback_data(code)))
-        
-    nav_buttons = []
-    if page > 1:
-        nav_buttons.append(types.InlineKeyboardButton("⬅️ Назад", callback_data=f"{prefix}{page-1}"))
-    else:
-        nav_buttons.append(types.InlineKeyboardButton(" ", callback_data="conv_ignore"))
-        
-    nav_buttons.append(types.InlineKeyboardButton(f"{page}/{total_pages}", callback_data="conv_ignore"))
-    
-    if page < total_pages:
-        nav_buttons.append(types.InlineKeyboardButton("Вперед ➡️", callback_data=f"{prefix}{page+1}"))
-    else:
-        nav_buttons.append(types.InlineKeyboardButton(" ", callback_data="conv_ignore"))
-        
-    markup.row(*nav_buttons)
-    markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="conv_cancel"))
-    return markup
-
 
 def register_converter_handlers():
     @bot.message_handler(commands=['convert'])
@@ -46,13 +17,13 @@ def register_converter_handlers():
             bot.send_message(message.chat.id, "Сервис временно недоступен.")
             return
             
-        total_pages = (len(items) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
-        markup = get_convert_keyboard(
-            prefix="cfp_", 
+        markup = get_currency_select_keyboard(
+            items=items,
             page=1, 
-            total_pages=total_pages, 
-            items=items, 
-            make_callback_data=lambda code: f"cf_{code}"
+            page_prefix="cfp_",
+            make_callback_data=lambda code: f"cf_{code}",
+            cancel_data="conv_cancel",
+            ignore_data="conv_ignore"
         )
         bot.send_message(message.chat.id, 'Выберите валюту <b>ИЗ</b> которой переводим:', parse_mode='HTML', reply_markup=markup)
 
@@ -66,14 +37,14 @@ def register_converter_handlers():
     def conv_from_page_callback(call: CallbackQuery):
         page = int(call.data.replace('cfp_', ''))
         items = get_sorted_currencies()
-        total_pages = (len(items) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
         
-        markup = get_convert_keyboard(
-            prefix="cfp_", 
+        markup = get_currency_select_keyboard(
+            items=items,
             page=page, 
-            total_pages=total_pages, 
-            items=items, 
-            make_callback_data=lambda code: f"cf_{code}"
+            page_prefix="cfp_",
+            make_callback_data=lambda code: f"cf_{code}",
+            cancel_data="conv_cancel",
+            ignore_data="conv_ignore"
         )
         
         try:
@@ -87,14 +58,14 @@ def register_converter_handlers():
         from_code = call.data.replace('cf_', '')
         
         items = get_sorted_currencies()
-        total_pages = (len(items) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
         
-        markup = get_convert_keyboard(
-            prefix=f"ctp_{from_code}_", 
+        markup = get_currency_select_keyboard(
+            items=items,
             page=1, 
-            total_pages=total_pages, 
-            items=items, 
-            make_callback_data=lambda code: f"ct_{from_code}_{code}"
+            page_prefix=f"ctp_{from_code}_",
+            make_callback_data=lambda code: f"ct_{from_code}_{code}",
+            cancel_data="conv_cancel",
+            ignore_data="conv_ignore"
         )
         
         text = f"Вы выбрали: <b>{from_code}</b>. Теперь выберите валюту <b>В</b> которую переводим:"
@@ -108,14 +79,14 @@ def register_converter_handlers():
         page = int(parts[2])
         
         items = get_sorted_currencies()
-        total_pages = (len(items) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
         
-        markup = get_convert_keyboard(
-            prefix=f"ctp_{from_code}_", 
+        markup = get_currency_select_keyboard(
+            items=items,
             page=page, 
-            total_pages=total_pages, 
-            items=items, 
-            make_callback_data=lambda code: f"ct_{from_code}_{code}"
+            page_prefix=f"ctp_{from_code}_",
+            make_callback_data=lambda code: f"ct_{from_code}_{code}",
+            cancel_data="conv_cancel",
+            ignore_data="conv_ignore"
         )
         
         try:

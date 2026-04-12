@@ -10,9 +10,12 @@ LIST_TTL = 7 * 24 * 3600  # 7 днів у секундах
 
 cache_lock = threading.Lock()
 
-def load_cache():
+def _ensure_data_dir():
     if not os.path.exists('data'):
         os.makedirs('data')
+
+def load_cache():
+    _ensure_data_dir()
     if not os.path.exists(CACHE_FILE):
         return {"list": {}, "rates": {}}
     try:
@@ -24,8 +27,7 @@ def load_cache():
         return {"list": {}, "rates": {}}
 
 def save_cache(cache_data):
-    if not os.path.exists('data'):
-        os.makedirs('data')
+    _ensure_data_dir()
     try:
         with cache_lock:
             with open(CACHE_FILE, 'w', encoding='utf-8') as f:
@@ -33,16 +35,17 @@ def save_cache(cache_data):
     except Exception as e:
         logging.error(f"Помилка запису кешу: {e}")
 
+def _is_cache_valid(cache_entry, ttl):
+    if not cache_entry or 'updated_at' not in cache_entry:
+        return False
+    return (time.time() - cache_entry['updated_at']) <= ttl
+
 def get_cached_list():
     cache = load_cache()
     list_cache = cache.get("list", {})
-    if not list_cache or 'updated_at' not in list_cache:
-        return None
-        
-    if time.time() - list_cache['updated_at'] > LIST_TTL:
-        return None
-        
-    return list_cache.get("currencies")
+    if _is_cache_valid(list_cache, LIST_TTL):
+        return list_cache.get("currencies")
+    return None
 
 def cache_list(currencies_dict):
     cache = load_cache()
@@ -56,14 +59,9 @@ def get_cached_rate(from_curr: str, to_curr: str):
     cache = load_cache()
     key = f"{from_curr}_{to_curr}"
     rate_cache = cache.get("rates", {}).get(key)
-    
-    if not rate_cache or 'updated_at' not in rate_cache:
-        return None
-        
-    if time.time() - rate_cache['updated_at'] > RATE_TTL:
-        return None
-        
-    return rate_cache.get("rate")
+    if _is_cache_valid(rate_cache, RATE_TTL):
+        return rate_cache.get("rate")
+    return None
 
 def cache_rate(from_curr: str, to_curr: str, rate: float):
     cache = load_cache()
