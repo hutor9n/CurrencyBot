@@ -15,8 +15,11 @@ def set_bot_commands():
 def main():
     logging.warning("Запуск CurrencyBot...")
     register_all_handlers()
-    set_bot_commands()
-    bot.polling(none_stop=True)
+    try:
+        set_bot_commands()
+        bot.polling(none_stop=True)
+    except KeyboardInterrupt:
+        logging.warning("Работа бота завершена пользователем (Ctrl+C).")
 
 if __name__ == "__main__":
     main()

@@ -1,24 +1,22 @@
 from telebot import types
 from telebot.types import Message, CallbackQuery
 from core.config import bot
+from core.translations import get_ru_name
 import logging
 from services.fiat_api import convert_currency, get_sorted_currencies
 
-MENU_BUTTONS = ['💱 Быстрые курсы', '🔄 Конвертер', '📋 Список валют']
-ITEMS_PER_PAGE = 15
+MENU_BUTTONS = ['💱 Курс гривны', '🔄 Конвертер', '📋 Список валют']
+ITEMS_PER_PAGE = 10
 
 def get_convert_keyboard(prefix: str, page: int, total_pages: int, items: list, make_callback_data):
-    markup = types.InlineKeyboardMarkup(row_width=3)
+    markup = types.InlineKeyboardMarkup(row_width=1)
     start_idx = (page - 1) * ITEMS_PER_PAGE
     end_idx = start_idx + ITEMS_PER_PAGE
     page_items = items[start_idx:end_idx]
     
-    buttons = []
-    for code, _ in page_items:
-        buttons.append(types.InlineKeyboardButton(code, callback_data=make_callback_data(code)))
-        
-    for i in range(0, len(buttons), 3):
-        markup.add(*buttons[i:i+3])
+    for code, original_name in page_items:
+        ru_name = get_ru_name(code, original_name)
+        markup.add(types.InlineKeyboardButton(f"{code} — {ru_name}", callback_data=make_callback_data(code)))
         
     nav_buttons = []
     if page > 1:
@@ -33,7 +31,7 @@ def get_convert_keyboard(prefix: str, page: int, total_pages: int, items: list, 
     else:
         nav_buttons.append(types.InlineKeyboardButton(" ", callback_data="conv_ignore"))
         
-    markup.add(*nav_buttons)
+    markup.row(*nav_buttons)
     markup.add(types.InlineKeyboardButton("❌ Отмена", callback_data="conv_cancel"))
     return markup
 

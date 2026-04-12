@@ -4,7 +4,7 @@ from core.config import bot
 
 def get_main_keyboard():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn_rates = types.KeyboardButton('💱 Быстрые курсы')
+    btn_rates = types.KeyboardButton('💱 Курс гривны')
     btn_convert = types.KeyboardButton('🔄 Конвертер')
     btn_list = types.KeyboardButton('📋 Список валют')
     # Добавляем кнопки: Быстрые курсы на весь первый ряд, остальные ниже

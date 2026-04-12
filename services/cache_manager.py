@@ -1,10 +1,14 @@
 import json
 import os
 import time
+import threading
+import logging
 
 CACHE_FILE = 'data/cache.json'
 RATE_TTL = 12 * 3600  # 12 годин у секундах
 LIST_TTL = 7 * 24 * 3600  # 7 днів у секундах
+
+cache_lock = threading.Lock()
 
 def load_cache():
     if not os.path.exists('data'):
@@ -12,19 +16,22 @@ def load_cache():
     if not os.path.exists(CACHE_FILE):
         return {"list": {}, "rates": {}}
     try:
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
+        with cache_lock:
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        logging.error(f"Помилка читання кешу: {e}")
         return {"list": {}, "rates": {}}
 
 def save_cache(cache_data):
     if not os.path.exists('data'):
         os.makedirs('data')
     try:
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=4)
+        with cache_lock:
+            with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        pass
+        logging.error(f"Помилка запису кешу: {e}")
 
 def get_cached_list():
     cache = load_cache()
