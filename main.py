@@ -2,6 +2,7 @@ import logging
 from telebot.types import BotCommand
 from core.config import bot
 from handlers import register_all_handlers
+from core.keep_alive import keep_alive
 
 def set_bot_commands():
     commands = [
@@ -15,6 +16,7 @@ def set_bot_commands():
 def main():
     logging.warning("Запуск CurrencyBot...")
     register_all_handlers()
+    keep_alive()
     try:
         set_bot_commands()
         bot.polling(none_stop=True)
