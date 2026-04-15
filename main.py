@@ -22,8 +22,6 @@ def main():
         register_all_controllers(bot)
         set_bot_commands(bot)
 
-        # Если webhook был активирован ранее, polling вернет ошибку 409.
-        bot.remove_webhook(drop_pending_updates=False)
         logging.warning("Запуск в polling-режиме")
         bot.polling(none_stop=True)
     except KeyboardInterrupt:
