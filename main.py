@@ -29,7 +29,8 @@ def main():
             logging.warning(f"Запуск в webhook-режиме: {webhook_url}")
             bot.remove_webhook()
             bot.set_webhook(url=webhook_url, drop_pending_updates=True)
-            start_keep_alive(bot)
+            keep_alive_thread = start_keep_alive(bot)
+            keep_alive_thread.join()
         else:
             logging.warning("Запуск в polling-режиме")
             start_keep_alive()
