@@ -15,7 +15,7 @@ RUN python -m venv ${VENV_PATH} && \
 # Копируем исходный код
 COPY . .
 
-FROM gcr.io/distroless/python3-debian12:nonroot
+FROM python:3.13-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -27,4 +27,4 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /app /app
 
-CMD ["main.py"]
+ENTRYPOINT ["/opt/venv/bin/python", "/app/main.py"]
