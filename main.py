@@ -23,6 +23,7 @@ def main():
         keep_alive()
         set_bot_commands(bot)
 
+        bot.remove_webhook(drop_pending_updates=False)
         logging.warning("Запуск в polling-режиме")
         bot.polling(none_stop=True)
     except KeyboardInterrupt:
