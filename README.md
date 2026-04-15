@@ -51,6 +51,8 @@ PORT=8080
 - `BOT_TOKEN` is required.
 - `API_KEYS` is required for currencylayer requests.
 - `PORT` is optional and defaults to `8080` for keep-alive.
+- `WEBHOOK_URL` is optional. If set, the bot runs in webhook mode instead of polling.
+- On Render, `RENDER_EXTERNAL_URL` is used automatically to build the webhook URL when `WEBHOOK_URL` is not set.
 
 ## Local Setup
 
@@ -72,7 +74,7 @@ The bot will:
 - create the Telegram bot instance,
 - register controllers,
 - start the keep-alive server,
-- begin polling Telegram.
+- either begin polling Telegram locally or expose a webhook endpoint when deployed with `WEBHOOK_URL` / `RENDER_EXTERNAL_URL`.
 
 ## Tests
 
@@ -90,6 +92,8 @@ Build and run with Docker if you prefer a containerized deployment.
 docker build -t currencybot .
 docker run --rm --env-file .env -p 8080:8080 currencybot
 ```
+
+For Render deployments, webhook mode is preferred. Set `WEBHOOK_URL` explicitly, or let the app derive it from `RENDER_EXTERNAL_URL`.
 
 ## Runtime Behavior
 

@@ -1,10 +1,11 @@
 import logging
+import os
 from telebot.types import BotCommand
 from telebot.apihelper import ApiTelegramException
 from core.config import create_bot
 from core.logger import setup_logger
 from controllers import register_all_controllers
-from core.keep_alive import start_keep_alive
+from core.keep_alive import build_webhook_url, start_keep_alive
 
 def set_bot_commands(bot):
     commands = [
@@ -21,9 +22,18 @@ def main():
     try:
         bot = create_bot()
         register_all_controllers(bot)
-        start_keep_alive()
         set_bot_commands(bot)
-        bot.polling(none_stop=True)
+
+        webhook_url = build_webhook_url()
+        if webhook_url:
+            logging.warning(f"Запуск в webhook-режиме: {webhook_url}")
+            bot.remove_webhook()
+            bot.set_webhook(url=webhook_url, drop_pending_updates=True)
+            start_keep_alive(bot)
+        else:
+            logging.warning("Запуск в polling-режиме")
+            start_keep_alive()
+            bot.polling(none_stop=True)
     except KeyboardInterrupt:
         logging.warning("Работа бота завершена пользователем (Ctrl+C).")
     except ApiTelegramException as e:
