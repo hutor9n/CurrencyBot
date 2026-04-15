@@ -1,5 +1,6 @@
 import logging
 from telebot.types import BotCommand
+from telebot.apihelper import ApiTelegramException
 from core.config import create_bot
 from core.logger import setup_logger
 from controllers import register_all_controllers
@@ -25,6 +26,11 @@ def main():
         bot.polling(none_stop=True)
     except KeyboardInterrupt:
         logging.warning("Работа бота завершена пользователем (Ctrl+C).")
+    except ApiTelegramException as e:
+        if getattr(e, "error_code", None) == 409:
+            logging.error("Бот уже запущен в другом экземпляре. Остановите второй процесс и запустите только один polling для этого токена.")
+        else:
+            logging.error(f"Ошибка Telegram API: {e}")
     except ValueError as e:
         logging.error(f"Ошибка конфигурации: {e}")
 
