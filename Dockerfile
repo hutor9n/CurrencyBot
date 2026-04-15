@@ -1,15 +1,30 @@
-FROM python:3.11-slim
+FROM python:3.13-slim-bookworm AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VENV_PATH=/opt/venv
 
 WORKDIR /app
 
-RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
-
-# Копируем файл с зависимостями и устанавливаем их
+# Устанавливаем зависимости в отдельное виртуальное окружение
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN python -m venv ${VENV_PATH} && \
+    ${VENV_PATH}/bin/pip install --no-cache-dir --upgrade pip && \
+    ${VENV_PATH}/bin/pip install --no-cache-dir -r requirements.txt
 
-# Копируем исходный код нашего проекта
+# Копируем исходный код
 COPY . .
 
-CMD ["python", "main.py"]
+FROM gcr.io/distroless/python3-debian12:nonroot
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VENV_PATH=/opt/venv \
+    PATH=/opt/venv/bin:${PATH}
+
+WORKDIR /app
+
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /app /app
+
+CMD ["main.py"]

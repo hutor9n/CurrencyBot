@@ -1,27 +1,30 @@
 import logging
 from telebot.types import BotCommand
-from core.config import bot
-from handlers import register_all_handlers
+from core.config import create_bot
+from controllers import register_all_controllers
 from core.keep_alive import keep_alive
 
-def set_bot_commands():
+def set_bot_commands(bot):
     commands = [
         BotCommand("start", "Главное меню и перезапуск"),
-        BotCommand("rates", "Курс популярных валют"),
+        BotCommand("rates", "Курс валют к гривне"),
         BotCommand("list", "Список всех доступных валют"),
-        BotCommand("convert", "Калькулятор-конвертер")
+        BotCommand("convert", "Конвертер валют")
     ]
     bot.set_my_commands(commands)
 
 def main():
     logging.warning("Запуск CurrencyBot...")
-    register_all_handlers()
-    keep_alive()
     try:
-        set_bot_commands()
+        bot = create_bot()
+        register_all_controllers(bot)
+        keep_alive()
+        set_bot_commands(bot)
         bot.polling(none_stop=True)
     except KeyboardInterrupt:
         logging.warning("Работа бота завершена пользователем (Ctrl+C).")
+    except ValueError as e:
+        logging.error(f"Ошибка конфигурации: {e}")
 
 if __name__ == "__main__":
     main()

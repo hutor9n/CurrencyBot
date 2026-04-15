@@ -8,15 +8,28 @@ import core.logger # Инициализация нашей новой систе
 load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-if not BOT_TOKEN:
-    raise ValueError("Не знайдено BOT_TOKEN у файлі .env")
 
 API_KEYS_RAW = os.getenv('API_KEYS', '')
 
 # Розбиваємо "key1,key2" на масив і прибираємо лапки/пробіли
 API_KEYS = [k.strip().strip('"\'') for k in API_KEYS_RAW.split(',')] if API_KEYS_RAW else []
 
-if not API_KEYS or not API_KEYS[0]:
-    raise ValueError("Не знайдено API_KEYS у файлі .env")
+def get_bot_token(required: bool = True) -> str | None:
+    if required and not BOT_TOKEN:
+        raise ValueError("Не найден BOT_TOKEN в .env")
+    return BOT_TOKEN
 
-bot = telebot.TeleBot(BOT_TOKEN)
+
+def get_api_keys(required: bool = True) -> list[str]:
+    keys = [k for k in API_KEYS if k]
+    if required and not keys:
+        raise ValueError("Не найдены API_KEYS в .env")
+    return keys
+
+
+def create_bot(token: str | None = None) -> telebot.TeleBot:
+    bot_token = token or get_bot_token(required=True)
+    return telebot.TeleBot(bot_token)
+
+# Оставлено для обратной совместимости с возможными старыми импортами.
+bot = create_bot() if BOT_TOKEN else None
