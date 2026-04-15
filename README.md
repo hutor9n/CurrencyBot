@@ -8,6 +8,7 @@ Telegram bot for viewing and converting fiat currency rates against UAH. The pro
 - Opens a paginated list of available currencies.
 - Supports interactive currency conversion with inline keyboards.
 - Caches currency lists and exchange rates to reduce external API calls.
+- Exposes a small keep-alive HTTP server for hosted environments.
 
 ## Project Structure
 
@@ -24,7 +25,7 @@ logs/
 ```
 
 - `main.py` is the application entry point.
-- `core/` contains configuration and logging infrastructure.
+- `core/` contains configuration, logging, and keep-alive infrastructure.
 - `controllers/` contains Telegram handlers and callback flows.
 - `services/` contains application-level currency logic and validation.
 - `models/` contains API integration and JSON cache persistence.
@@ -69,7 +70,7 @@ The bot will:
 - initialize logging,
 - create the Telegram bot instance,
 - register controllers,
-- remove any previously configured Telegram webhook,
+- start the keep-alive server,
 - begin polling Telegram.
 
 ## Tests
@@ -86,7 +87,7 @@ Build and run with Docker if you prefer a containerized deployment.
 
 ```bash
 docker build -t currencybot .
-docker run --rm --env-file .env currencybot
+docker run --rm --env-file .env -p 8080:8080 currencybot
 ```
 
 ## Runtime Behavior
