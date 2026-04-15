@@ -20,11 +20,12 @@ def main():
     try:
         bot = create_bot()
         register_all_controllers(bot)
-        keep_alive_thread = keep_alive()
         set_bot_commands(bot)
 
-        logging.warning("Webhook и polling отключены")
-        keep_alive_thread.join()
+        keep_alive()
+        bot.delete_webhook(drop_pending_updates=True)
+        logging.warning("Запуск long polling")
+        bot.infinity_polling(skip_pending=True)
     except KeyboardInterrupt:
         logging.warning("Работа бота завершена пользователем (Ctrl+C).")
     except ValueError as e:

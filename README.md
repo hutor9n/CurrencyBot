@@ -71,7 +71,8 @@ The bot will:
 - create the Telegram bot instance,
 - register controllers,
 - start the keep-alive server,
-- keep the process alive without webhook and polling.
+- clear any existing webhook,
+- start long polling to receive Telegram updates.
 
 ## Tests
 
