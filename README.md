@@ -8,7 +8,6 @@ Telegram bot for viewing and converting fiat currency rates against UAH. The pro
 - Opens a paginated list of available currencies.
 - Supports interactive currency conversion with inline keyboards.
 - Caches currency lists and exchange rates to reduce external API calls.
-- Exposes a simple keep-alive HTTP server for hosted environments.
 
 ## Project Structure
 
@@ -25,7 +24,7 @@ logs/
 ```
 
 - `main.py` is the application entry point.
-- `core/` contains configuration, logging, and keep-alive infrastructure.
+- `core/` contains configuration and logging infrastructure.
 - `controllers/` contains Telegram handlers and callback flows.
 - `services/` contains application-level currency logic and validation.
 - `models/` contains API integration and JSON cache persistence.
@@ -45,14 +44,11 @@ Create a `.env` file in the project root with:
 ```env
 BOT_TOKEN=your_telegram_bot_token
 API_KEYS=key1,key2,key3
-PORT=8080
 ```
 
 - `BOT_TOKEN` is required.
 - `API_KEYS` is required for currencylayer requests.
-- `PORT` is optional and defaults to `8080` for keep-alive.
-- `WEBHOOK_URL` is optional. If set, the bot runs in webhook mode instead of polling.
-- On Render, `RENDER_EXTERNAL_URL` is used automatically to build the webhook URL when `WEBHOOK_URL` is not set.
+
 
 ## Local Setup
 
@@ -73,8 +69,8 @@ The bot will:
 - initialize logging,
 - create the Telegram bot instance,
 - register controllers,
-- start the keep-alive server,
-- either begin polling Telegram locally or expose a webhook endpoint when deployed with `WEBHOOK_URL` / `RENDER_EXTERNAL_URL`.
+- remove any previously configured Telegram webhook,
+- begin polling Telegram.
 
 ## Tests
 
@@ -90,10 +86,8 @@ Build and run with Docker if you prefer a containerized deployment.
 
 ```bash
 docker build -t currencybot .
-docker run --rm --env-file .env -p 8080:8080 currencybot
+docker run --rm --env-file .env currencybot
 ```
-
-For Render deployments, webhook mode is preferred. Set `WEBHOOK_URL` explicitly, or let the app derive it from `RENDER_EXTERNAL_URL`.
 
 ## Runtime Behavior
 
