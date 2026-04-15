@@ -29,3 +29,4 @@ def keep_alive():
     t = Thread(target=run_server)
     t.daemon = True
     t.start()
+    return t
