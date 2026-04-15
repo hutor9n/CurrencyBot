@@ -13,7 +13,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         logging.debug("keep_alive: " + format % args)
 
-def run_server():
+def _run_keep_alive_server():
     try:
         port = int(os.environ.get('PORT', 8080))
         server = HTTPServer(('0.0.0.0', port), SimpleHandler)
@@ -22,8 +22,9 @@ def run_server():
     except Exception as e:
         logging.error(f"Ошибка сервера keep-alive: {e}")
 
-def keep_alive():
-    t = Thread(target=run_server, name="keep_alive_server")
+def start_keep_alive() -> Thread:
+    t = Thread(target=_run_keep_alive_server, name="keep_alive_server")
     t.daemon = True
     t.start()
     logging.info("Поток keep-alive успешно запущен")
+    return t

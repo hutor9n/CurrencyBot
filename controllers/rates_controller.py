@@ -1,8 +1,9 @@
 import logging
 from telebot import TeleBot
 from telebot.types import Message, CallbackQuery
+from controllers.common import close_inline_keyboard, get_total_pages, safe_edit_message_reply_markup, safe_edit_message_text
 from views import messages, keyboards
-from models import fiat_api
+from services.currency_service import convert_currency, get_sorted_currencies
 
 ITEMS_PER_PAGE = 15
 RATES_PICKER_ITEMS_PER_PAGE = 10
@@ -18,34 +19,36 @@ def register_rates_controllers(bot: TeleBot):
     def currency_callback(call: CallbackQuery):
         logging.info(f"Пользователь {call.from_user.id} выбрал валюту в разделе /rates: {call.data}")
         if call.data == 'else':
-            items = fiat_api.get_sorted_currencies()
+            items = get_sorted_currencies()
             if not items:
-                bot.send_message(call.message.chat.id, 'Не удалось получить список валют. Попробуйте позже.')
+                bot.send_message(call.message.chat.id, messages.get_currency_list_unavailable_text())
                 bot.answer_callback_query(call.id)
                 return
 
-            total_pages = (len(items) + RATES_PICKER_ITEMS_PER_PAGE - 1) // RATES_PICKER_ITEMS_PER_PAGE
+            total_pages = get_total_pages(items, RATES_PICKER_ITEMS_PER_PAGE)
             markup = keyboards.get_rates_picker_keyboard(
                 page=1,
                 total_pages=total_pages,
                 items=items,
                 items_per_page=RATES_PICKER_ITEMS_PER_PAGE,
             )
-            bot.edit_message_text(
+            safe_edit_message_text(
+                bot,
+                call.message,
                 "💱 Выберите валюту для просмотра курса к гривне (UAH):",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
                 reply_markup=markup,
             )
             bot.answer_callback_query(call.id)
             return
             
-        result = fiat_api.convert_currency(call.data, 'UAH', 1)
+        result = convert_currency(call.data, 'UAH', 1)
         if result is not None:
             text = f'💱 Текущий курс: <b>{result:.2f} UAH</b>'
             bot.send_message(call.message.chat.id, text, parse_mode='HTML')
         else:
             bot.send_message(call.message.chat.id, 'Произошла ошибка при получении курса. Попробуйте позже.')
+
+        close_inline_keyboard(bot, call.message)
             
         bot.answer_callback_query(call.id)
 
@@ -56,12 +59,12 @@ def register_rates_controllers(bot: TeleBot):
             return
 
         page = int(call.data.replace('ratep_', ''))
-        items = fiat_api.get_sorted_currencies()
+        items = get_sorted_currencies()
         if not items:
-            bot.answer_callback_query(call.id, 'Список валют временно недоступен.')
+            bot.answer_callback_query(call.id, messages.get_currency_list_temp_unavailable_text())
             return
 
-        total_pages = (len(items) + RATES_PICKER_ITEMS_PER_PAGE - 1) // RATES_PICKER_ITEMS_PER_PAGE
+        total_pages = get_total_pages(items, RATES_PICKER_ITEMS_PER_PAGE)
         markup = keyboards.get_rates_picker_keyboard(
             page=page,
             total_pages=total_pages,
@@ -69,26 +72,22 @@ def register_rates_controllers(bot: TeleBot):
             items_per_page=RATES_PICKER_ITEMS_PER_PAGE,
         )
 
-        try:
-            bot.edit_message_reply_markup(
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                reply_markup=markup,
-            )
-        except Exception as e:
-            logging.warning(f"Не удалось обновить страницу выбора валюты в /rates: {e}")
+        if not safe_edit_message_reply_markup(bot, call.message, markup):
+            logging.warning("Не удалось обновить страницу выбора валюты в /rates")
 
         bot.answer_callback_query(call.id)
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith('rate_'))
     def rate_picker_selected(call: CallbackQuery):
         code = call.data.replace('rate_', '')
-        result = fiat_api.convert_currency(code, 'UAH', 1)
+        result = convert_currency(code, 'UAH', 1)
         if result is not None:
             text = f'💱 Текущий курс {code}: <b>{result:.2f} UAH</b>'
             bot.send_message(call.message.chat.id, text, parse_mode='HTML')
         else:
-            bot.send_message(call.message.chat.id, 'Произошла ошибка при получении курса. Попробуйте позже.')
+            bot.send_message(call.message.chat.id, messages.get_currency_rate_unavailable_text())
+
+        close_inline_keyboard(bot, call.message)
 
         bot.answer_callback_query(call.id)
 
@@ -96,13 +95,13 @@ def register_rates_controllers(bot: TeleBot):
     @bot.message_handler(func=lambda msg: msg.text == '📘 Список валют')
     def currencies_command(message: Message):
         logging.info(f"Пользователь {message.from_user.id} запросил список валют (/list)")
-        items = fiat_api.get_sorted_currencies()
+        items = get_sorted_currencies()
         if items:
             text, total_pages = messages.get_list_page_text(items, page=1, items_per_page=ITEMS_PER_PAGE)
             markup = keyboards.get_pagination_keyboard(page=1, total_pages=total_pages)
             bot.send_message(message.chat.id, text, parse_mode='HTML', reply_markup=markup)
         else:
-            bot.send_message(message.chat.id, 'Не удалось получить список валют. Попробуйте позже.')
+            bot.send_message(message.chat.id, messages.get_currency_list_unavailable_text())
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith('page_') or call.data == 'ignore')
     def pagination_callback(call: CallbackQuery):
@@ -111,19 +110,11 @@ def register_rates_controllers(bot: TeleBot):
             return
             
         page = int(call.data.split('_')[1])
-        items = fiat_api.get_sorted_currencies()
+        items = get_sorted_currencies()
         
         if items:
             text, total_pages = messages.get_list_page_text(items, page, ITEMS_PER_PAGE)
             markup = keyboards.get_pagination_keyboard(page, total_pages)
-            try:
-                bot.edit_message_text(
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    text=text,
-                    parse_mode='HTML',
-                    reply_markup=markup
-                )
-            except Exception as e:
-                logging.warning(f"Не удалось обновить страницу списка валют: {e}")
+            if not safe_edit_message_text(bot, call.message, text, parse_mode='HTML', reply_markup=markup):
+                logging.warning("Не удалось обновить страницу списка валют")
         bot.answer_callback_query(call.id)

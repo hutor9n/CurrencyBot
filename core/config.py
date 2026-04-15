@@ -1,8 +1,6 @@
 import telebot
 import os
-import logging
 from dotenv import load_dotenv
-import core.logger # Инициализация нашей новой системы логирования
 
 # Завантажуємо змінні з .env файлу
 load_dotenv()
@@ -30,6 +28,3 @@ def get_api_keys(required: bool = True) -> list[str]:
 def create_bot(token: str | None = None) -> telebot.TeleBot:
     bot_token = token or get_bot_token(required=True)
     return telebot.TeleBot(bot_token)
-
-# Оставлено для обратной совместимости с возможными старыми импортами.
-bot = create_bot() if BOT_TOKEN else None

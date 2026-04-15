@@ -1,8 +1,9 @@
 import logging
 from telebot.types import BotCommand
 from core.config import create_bot
+from core.logger import setup_logger
 from controllers import register_all_controllers
-from core.keep_alive import keep_alive
+from core.keep_alive import start_keep_alive
 
 def set_bot_commands(bot):
     commands = [
@@ -14,11 +15,12 @@ def set_bot_commands(bot):
     bot.set_my_commands(commands)
 
 def main():
+    setup_logger()
     logging.warning("Запуск CurrencyBot...")
     try:
         bot = create_bot()
         register_all_controllers(bot)
-        keep_alive()
+        start_keep_alive()
         set_bot_commands(bot)
         bot.polling(none_stop=True)
     except KeyboardInterrupt:

@@ -9,6 +9,38 @@ def get_start_text() -> str:
 def get_rates_menu_text() -> str:
     return '💱 Выберите валюту для просмотра курса к гривне (UAH):'
 
+
+def get_currency_list_unavailable_text() -> str:
+    return 'Не удалось получить список валют. Попробуйте позже.'
+
+
+def get_currency_list_temp_unavailable_text() -> str:
+    return 'Список валют временно недоступен.'
+
+
+def get_currency_rate_unavailable_text() -> str:
+    return 'Произошла ошибка при получении курса. Попробуйте позже.'
+
+
+def get_convert_unavailable_text() -> str:
+    return 'Сервис временно недоступен.'
+
+
+def get_convert_cancelled_text() -> str:
+    return 'Операция конвертации отменена.'
+
+
+def get_convert_invalid_amount_text() -> str:
+    return 'Пожалуйста, введите корректное число (используйте точку или запятую).'
+
+
+def get_convert_error_text() -> str:
+    return 'Произошла ошибка при расчете курса.'
+
+
+def get_convert_unexpected_error_text() -> str:
+    return 'Возникла непредвиденная ошибка.'
+
 def get_list_page_text(items, page, items_per_page=15):
     total_pages = (len(items) + items_per_page - 1) // items_per_page
     if total_pages == 0:
